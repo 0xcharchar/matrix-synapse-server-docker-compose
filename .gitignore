@@ -2,3 +2,5 @@
 schemas
 uploads/*
 media/*
+*.swp
+*.swo

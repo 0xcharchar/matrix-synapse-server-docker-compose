@@ -9,6 +9,8 @@ services:
     # Since synapse does not retry to connect to the database, restart upon
     # failure
     restart: unless-stopped
+    networks:
+      - matrix-network
     # See the readme for a full documentation of the environment settings
     environment:
       - SYNAPSE_NO_TLS=1
@@ -18,7 +20,7 @@ services:
       - SYNAPSE_LOG_LEVEL=INFO
       - POSTGRES_PASSWORD=changeme
     volumes:
-      - ./synapse-data:/datagi
+      - ./synapse-data:/data
     depends_on:
       - db
     # In order to expose Synapse, remove one of the following, you might for
@@ -27,18 +29,20 @@ services:
       - 8008:8008
 
   db:
-    image: docker.io/postgres:10-alpine
+    image: docker.io/postgres:13-alpine
+    networks:
+      - matrix-network
     # Change that password, of course!
     environment:
-      - POSTGRES_USER=synapse
-      - POSTGRES_PASSWORD=changeme
-    volumes:
-      # You may store the database tables in a local folder..
-      - ./schemas:/var/lib/postgresql/data
-      # .. or store them on some high performance storage for better results
-      # - /path/to/ssd/storage:/var/lib/postgresql/data
+      POSTGRES_USER: synapse_user
+      POSTGRES_PASSWORD: changeme
+      POSTGRES_DB: synapsetest
+      POSTGRES_INITDB_ARGS: '--encoding=UTF8 --lc-collate=C --lc-ctype=C'
 
+# This setup allows for running OpenVPN and a custom dockernetwork
 networks:
-  default:
-    external:
-      name: matrix
+  matrix-network:
+    ipam:
+      config:
+        - subnet: 172.16.238.0/24
+          gateway: 172.16.238.1
